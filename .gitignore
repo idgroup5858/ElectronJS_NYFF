@@ -1,0 +1,5 @@
+node_modules
+dist
+app-resources
+server/node_modules
+server/dist

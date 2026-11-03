@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="uz">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'" />
+    <title>NYFF Offline — sozlamalar</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #121212;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        color: #171717;
+        display: flex;
+        flex-direction: column;
+      }
+      header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #fff; }
+      header img { width: 34px; height: 34px; border-radius: 6px; }
+      header b { display: block; font-size: 15px; letter-spacing: 0.08em; }
+      header span { font-size: 12px; color: rgba(255, 255, 255, 0.55); }
+      /* POS monitorlari past — ikki ustun: chapda ulanish, o'ngda printerlar */
+      main { flex: 1; padding: 0 16px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+      .card { background: #fff; border-radius: 12px; overflow: hidden; }
+      .printers { padding: 14px 18px 16px; display: grid; gap: 14px; }
+      .row { display: flex; gap: 8px; }
+      .row select { flex: 1; min-width: 0; }
+      .row button { height: 40px; }
+      select {
+        width: 100%;
+        height: 40px;
+        border: 1px solid #d4d4d4;
+        border-radius: 6px;
+        padding: 0 8px;
+        font: inherit;
+        font-size: 14px;
+        background: #fff;
+      }
+      select:focus { outline: 2px solid #ffc20e; border-color: #ffc20e; }
+      .link { height: auto; padding: 0; background: none; color: #525252; font-size: 12px; letter-spacing: 0; text-transform: none; text-decoration: underline; justify-self: start; }
+      .card-head { padding: 12px 18px; border-bottom: 1px solid #e5e5e5; }
+      .card-head h1 { margin: 0; font-size: 17px; }
+      .card-head p { margin: 4px 0 0; font-size: 12px; color: #737373; }
+      form { padding: 14px 18px 16px; display: grid; gap: 11px; }
+      label { display: block; font-size: 12px; font-weight: 600; color: #525252; margin-bottom: 5px; }
+      input {
+        width: 100%;
+        height: 40px;
+        border: 1px solid #d4d4d4;
+        border-radius: 6px;
+        padding: 0 12px;
+        font: inherit;
+        font-size: 14px;
+      }
+      input:focus { outline: 2px solid #ffc20e; border-color: #ffc20e; }
+      #key { font-family: Consolas, monospace; font-size: 13px; }
+      .hint { font-size: 11px; color: #a3a3a3; margin-top: 3px; }
+      details { border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px 12px; }
+      summary { cursor: pointer; font-size: 13px; font-weight: 600; color: #404040; }
+      .db { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-top: 10px; }
+      .db .wide { grid-column: span 2; }
+      .message { border-radius: 6px; padding: 10px 12px; font-size: 13px; line-height: 1.45; white-space: pre-line; }
+      .message.error { background: #fef2f2; color: #b91c1c; font-weight: 600; }
+      .message.warning { background: #fffbeb; color: #92400e; }
+      .message.ok { background: #ecfdf5; color: #047857; font-weight: 600; }
+      .actions { display: flex; gap: 8px; }
+      button {
+        height: 44px;
+        border: 0;
+        border-radius: 6px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+      button:disabled { opacity: 0.5; cursor: wait; }
+      .primary { flex: 1; background: #ffc20e; color: #121212; }
+      .ghost { padding: 0 16px; background: #f5f5f5; color: #404040; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <img src="logo.png" alt="" />
+      <div><b>NYFF OFFLINE</b><span>Internet yo'q paytda kassa shu kompyuterda ishlaydi</span></div>
+    </header>
+    <main>
+      <div class="card">
+        <div class="card-head">
+          <h1>Sozlamalar</h1>
+          <p>Bir marta kiritiladi — keyin dastur fonda ishlaydi va Windows bilan birga yonadi.</p>
+        </div>
+        <form id="form" autocomplete="off">
+          <div>
+            <label for="centralUrl">Server manzili</label>
+            <input id="centralUrl" spellcheck="false" placeholder="https://newyork24.uz" />
+            <div class="hint">Markaziy backend manzili (porti bilan)</div>
+          </div>
+          <div>
+            <label for="key">Offline kalit</label>
+            <input id="key" spellcheck="false" placeholder="br_….…" />
+            <div class="hint">Admin panel → Filiallar → filial → «Offline kalit» → Nusxalash</div>
+          </div>
+          <details id="dbBox">
+            <summary>Baza (PostgreSQL) — standart: postgres / root, nyff</summary>
+            <div class="db">
+              <div><label for="dbHost">Manzil</label><input id="dbHost" spellcheck="false" /></div>
+              <div><label for="dbPort">Port</label><input id="dbPort" inputmode="numeric" /></div>
+              <div><label for="dbUser">Foydalanuvchi</label><input id="dbUser" spellcheck="false" /></div>
+              <div><label for="dbPassword">Parol</label><input id="dbPassword" type="password" /></div>
+              <div class="wide"><label for="dbName">Baza nomi</label><input id="dbName" spellcheck="false" /></div>
+            </div>
+          </details>
+          <div id="message" class="message" hidden></div>
+          <div class="actions">
+            <button type="button" id="openKassa" class="ghost" hidden>Offline kassa</button>
+            <button type="submit" id="save" class="primary">Saqlash</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h1>Printerlar</h1>
+          <p>Chek oynasiz, ikkala printerdan bir vaqtda chiqadi. Tanlash darhol saqlanadi.</p>
+        </div>
+        <div class="printers">
+          <div>
+            <label for="printer-receipt">Kassa printeri (mijoz cheki)</label>
+            <div class="row">
+              <select id="printer-receipt" data-role="receipt"></select>
+              <button type="button" class="ghost" data-test="receipt">Sinov</button>
+            </div>
+            <div class="hint">Tanlanmasa — chek hozirgidek brauzer orqali (standart printerdan) chiqadi</div>
+          </div>
+          <div>
+            <label for="printer-kitchen">Oshxona printeri</label>
+            <div class="row">
+              <select id="printer-kitchen" data-role="kitchen"></select>
+              <button type="button" class="ghost" data-test="kitchen">Sinov</button>
+            </div>
+            <div class="hint">Oshxona cheki — ichimliklarsiz. Tanlanmasa — chiqmaydi</div>
+          </div>
+          <div id="printerMessage" class="message" hidden></div>
+          <button type="button" id="reloadPrinters" class="link">Printer ro'yxatda yo'qmi? Drayverini o'rnatib, ro'yxatni yangilang</button>
+        </div>
+      </div>
+    </main>
+    <script src="setup.js"></script>
+  </body>
+</html>

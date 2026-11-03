@@ -1,0 +1,63 @@
+{
+  "name": "nyff-offline-desktop",
+  "productName": "NYFF Offline",
+  "version": "0.3.0",
+  "description": "NYFF offline kassa — kassa kompyuterida fonda: internet yo'q paytda savdo, internet qaytgach markazga yuboradi",
+  "author": "ID GROUP",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "prepare-app": "node scripts/prepare.js",
+    "start": "node scripts/start.js",
+    "build": "npm run prepare-app && electron-builder --win",
+    "build:only": "electron-builder --win",
+    "test": "npm --prefix server test"
+  },
+  "build": {
+    "appId": "uz.idgroup.nyff.offline",
+    "productName": "NYFF Offline",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "printer.js",
+      "preload.js",
+      "setup.html",
+      "setup.js",
+      "logo.png",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "app-resources",
+        "to": ".",
+        "filter": [
+          "frontend/**/*",
+          "backend/**/*"
+        ]
+      }
+    ],
+    "npmRebuild": false,
+    "win": {
+      "icon": "build/icon.png",
+      "target": "nsis",
+      "artifactName": "NYFF-Offline-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NYFF Offline kassa"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.9.3",
+    "electron-builder": "^26.15.3"
+  }
+}
