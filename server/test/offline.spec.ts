@@ -68,6 +68,8 @@ describe('offline kassa serveri', () => {
     central.orders.clear();
     central.counter = 0;
     central.burgerPrice = 32000;
+    central.maxBody = 0;
+    central.tooLarge = 0;
   });
 
   afterAll(async () => {
@@ -106,13 +108,27 @@ describe('offline kassa serveri', () => {
     await http().get('/api/offline/orders').set(bearer(`${login.body.token}x`)).expect(401);
 
     const other = 'usr_cashier_2';
+    // `detail` — qolgan urinishlar (kassa 4-xatodan keyin "1 ta urinish qoldi" deydi)
     for (let i = 0; i < 4; i++) {
       const wrong = await http().post('/api/offline/login').send({ cashierId: other, pin: '0000' }).expect(401);
-      expect(wrong.body.code).toBe('wrong_pin');
+      expect(wrong.body).toMatchObject({ code: 'wrong_pin', detail: String(4 - i) });
     }
+    // blok: `detail` — qolgan soniyalar (kassa sanaydi)
     const locked = await http().post('/api/offline/login').send({ cashierId: other, pin: '0000' }).expect(429);
-    expect(locked.body.code).toBe('too_many_attempts');
-    await http().post('/api/offline/login').send({ cashierId: other, pin: '4321' }).expect(429);
+    expect(locked.body).toMatchObject({ code: 'too_many_attempts', detail: '300s' });
+    const again = await http().post('/api/offline/login').send({ cashierId: other, pin: '4321' }).expect(429);
+    expect(again.body.detail).toMatch(/^\d+s$/);
+  });
+
+  it('bir vaqtda 10 ta xato PIN — faqat 5 tasi tekshiriladi, keyin blok', async () => {
+    await sync.refreshSnapshot();
+    // oldingi testdagi blok (xotirada) tugagan payt
+    const at = new Date(Date.now() + 10 * 60_000);
+    const codeOf = (error: { getResponse(): { code: string } }) => error.getResponse().code;
+    const codes = await Promise.all(Array.from({ length: 10 }, () => kassa.login('usr_cashier_2', '0000', at).then(() => 'ok', codeOf)));
+    expect(codes.filter((code) => code === 'wrong_pin')).toHaveLength(4);
+    expect(codes.filter((code) => code === 'too_many_attempts')).toHaveLength(6);
+    await expectCode('too_many_attempts', () => kassa.login('usr_cashier_2', '4321', at));
   });
 
   it("online kassadan o'tish: PIN'siz, raqam davom etadi; narx menyudan; qayta yuborilgani takrorlanmaydi", async () => {
@@ -232,6 +248,25 @@ describe('offline kassa serveri', () => {
     const data = (await http().get('/api/offline/data').expect(200)).body;
     // online kassa uzatgan menyu yo'q — yangi nusxadagi narx
     expect(data.menu.products.find((p: { id: string }) => p.id === 'burger-classic').price).toBe(35000);
+  });
+
+  it("paket markaz chegarasidan katta (413) — yarmiga bo'linib darhol qayta yuboriladi, hammasi yetadi", async () => {
+    await sync.refreshSnapshot();
+    const { token } = (await handover(0).expect(200)).body;
+    for (let i = 0; i < 7; i++) await http().post('/api/offline/orders').set(bearer(token)).send(order()).expect(201);
+    // bitta buyurtma ~0,4 KB: 7 tasi bitta paketda sig'maydi, 2 tasi sig'adi
+    central.maxBody = 1200;
+    await sync.push();
+
+    expect(central.tooLarge).toBeGreaterThan(0);
+    expect([...central.orders.values()].map((o) => o.number).sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(await db.query('SELECT id FROM offline_orders')).toEqual([]);
+    expect((await http().get('/api/offline/state').expect(200)).body.sync).toMatchObject({
+      online: true,
+      error: null,
+      pending: 0,
+      rejected: 0,
+    });
   });
 
   it("markaz yo'q — buyurtma kutadi, holatda xato; markaz rad etgani qayta yuborilmaydi; kalit noto'g'ri — unauthorized", async () => {

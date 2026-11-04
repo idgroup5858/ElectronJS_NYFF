@@ -13,6 +13,9 @@ import { OfflineOrder } from './offline.entities';
 import { OfflineStore, type StoredCounter, type StoredHandover, type StoredSnapshot } from './offline-store';
 import { OfflineSyncService, type SyncStatus } from './offline-sync.service';
 
+/** `too_many_attempts` ning `detail` i: blok tugashiga qolgan soniyalar (`"273s"`, markazdagidek). */
+const lockLeft = (until: number, now: Date) => `${Math.max(1, Math.ceil((until - now.getTime()) / 1000))}s`;
+
 /** Offline kassaga kirgan kassir. */
 export interface OfflineCashier {
   id: string;
@@ -125,17 +128,24 @@ export class OfflineKassaService {
     return { token: await this.sign(cashier.id, now), cashier };
   }
 
-  /** PIN bilan kirish (markazdan olingan xesh bilan); 5 marta xato — 5 daqiqa blok. */
+  /**
+   * PIN bilan kirish (markazdan olingan xesh bilan); 5 marta xato — 5 daqiqa blok. Markazdagidek (2026-11-04): urinish PIN
+   * solishtirilishidan oldin sanaladi (bir vaqtdagi so'rovlar blokni chetlab o'tmasin), 5-si blokni qo'yadi; xatoda
+   * `detail` — blokda qolgan vaqt (`"273s"`, kassa sanaydi) yoki `wrong_pin` da qolgan urinishlar (`"1"`).
+   */
   async login(cashierId: string, pin: string, now = new Date()): Promise<{ token: string; cashier: OfflineCashier }> {
-    const entry = this.attempts.get(cashierId);
-    if (entry && entry.lockedUntil > now.getTime()) fail('too_many_attempts');
     const snapshot = await this.store.get('snapshot');
     const cashier = snapshot?.cashiers.find((c) => c.id === cashierId) ?? fail('not_found', `cashier ${cashierId}`);
+    // tekshiruv va band qilish orasida `await` yo'q — bir vaqtda kelgan so'rovlar ham to'g'ri sanaladi
+    const entry = this.attempts.get(cashierId);
+    if (entry && entry.lockedUntil > now.getTime()) fail('too_many_attempts', lockLeft(entry.lockedUntil, now));
+    // blok muddati o'tgan bo'lsa — hisob boshidan
+    const fails = (entry && entry.lockedUntil === 0 ? entry.fails : 0) + 1;
+    const lockedUntil = fails >= MAX_PIN_ATTEMPTS ? now.getTime() + PIN_LOCK_MS : 0;
+    this.attempts.set(cashierId, { fails, lockedUntil });
     if (!(await comparePin(pin, cashier.pinHash))) {
-      // blok muddati o'tgan bo'lsa — hisob boshidan
-      const fails = (entry && entry.lockedUntil === 0 ? entry.fails : 0) + 1;
-      this.attempts.set(cashierId, { fails, lockedUntil: fails >= MAX_PIN_ATTEMPTS ? now.getTime() + PIN_LOCK_MS : 0 });
-      fail(fails >= MAX_PIN_ATTEMPTS ? 'too_many_attempts' : 'wrong_pin');
+      if (lockedUntil) fail('too_many_attempts', lockLeft(lockedUntil, now));
+      fail('wrong_pin', String(MAX_PIN_ATTEMPTS - fails));
     }
     this.attempts.delete(cashierId);
     const { id, name, surname } = cashier;

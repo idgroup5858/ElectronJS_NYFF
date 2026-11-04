@@ -5,7 +5,7 @@ import { dirname, relative, resolve } from 'node:path';
 import { DataSource, IsNull, Not } from 'typeorm';
 import { imagesDir } from '../shared/infra';
 import { SYNC_BATCH_SIZE, type SyncImage, type SyncOrder } from '../shared/sync.types';
-import { CentralClient, CentralError } from './central-client';
+import { CentralClient, CentralError, PAYLOAD_TOO_LARGE } from './central-client';
 import { OFFLINE_CONFIG, syncConfigured, type OfflineConfig } from './offline-config';
 import { OfflineOrder } from './offline.entities';
 import { OfflineStore, type StoredImages } from './offline-store';
@@ -128,19 +128,29 @@ export class OfflineSyncService implements OnApplicationBootstrap, OnApplication
     }
   }
 
-  /** Yuborilmagan buyurtmalarni (eskisi birinchi) bo'lib-bo'lib yuboradi; hammasi yetib borgach — yangi nusxa. */
+  /**
+   * Yuborilmagan buyurtmalarni (eskisi birinchi) bo'lib-bo'lib yuboradi; hammasi yetib borgach — yangi nusxa. Markaz
+   * paketni katta deb rad etsa (413 — so'rov tanasi chegarasi; eski markazda 100 KB, ~150 buyurtma) — paket yarmiga
+   * tushadi va darhol qayta yuboriladi (2026-11-04: avval navbat "internet yo'q" bilan abadiy qotib qolardi).
+   */
   async push(): Promise<void> {
     let sent = 0;
+    let size = SYNC_BATCH_SIZE;
     // har qadamda buyurtmalar o'chadi yoki rad etiladi; chegara — kutilmagan javobda aylanib qolmaslik uchun
     for (let round = 0; round < 100; round++) {
       const batch = await this.dataSource.manager.find(OfflineOrder, {
         where: { rejectedCode: IsNull() },
         order: { createdAt: 'ASC' },
-        take: SYNC_BATCH_SIZE,
+        take: size,
       });
       if (batch.length === 0) break;
       const result = await this.check(() => this.central.pushOrders(batch.map(toSyncOrder)));
-      if (!result) return;
+      if (!result) {
+        if (this.status.error !== PAYLOAD_TOO_LARGE || batch.length === 1) return;
+        size = Math.ceil(batch.length / 2);
+        this.logger.warn(`Paket markaz uchun katta (413) — ${size} tadan yuboriladi`);
+        continue;
+      }
       const revs = new Map(batch.map((order) => [order.id, order.rev]));
       // yuborilgan nusxa bilan bir xilini o'chiradi — shu orada o'zgargani (masalan "Tayyor") keyingi safar qayta ketadi
       for (const id of result.accepted) {

@@ -42,6 +42,10 @@ export class FakeCentral {
   ];
   /** qabul qilingan buyurtmalar (oxirgi holati) */
   readonly orders = new Map<string, SyncOrder>();
+  /** so'rov tanasi chegarasi, bayt (haqiqiy markazdagi `SYNC_BODY_LIMIT` dek; kattasiga — 413); `0` — chegarasiz */
+  maxBody = 0;
+  /** 413 bilan qaytarilgan paketlar soni */
+  tooLarge = 0;
   /** markaz rad etadigan buyurtma — xato kodi */
   reject: (order: SyncOrder) => string | null = (order) =>
     order.split && Object.values(order.split).reduce((sum, part) => sum + (part ?? 0), 0) !== order.total ? 'invalid_amount' : null;
@@ -89,6 +93,10 @@ export class FakeCentral {
     if (url.pathname === '/api/sync/orders' && request.method === 'POST') {
       let raw = '';
       for await (const chunk of request) raw += chunk;
+      if (this.maxBody > 0 && Buffer.byteLength(raw) > this.maxBody) {
+        this.tooLarge++;
+        return send(413, { statusCode: 413, message: 'request entity too large' });
+      }
       const { orders } = JSON.parse(raw) as { orders: SyncOrder[] };
       const result = { accepted: [] as string[], rejected: [] as { id: string; code: string }[] };
       for (const order of orders) {
