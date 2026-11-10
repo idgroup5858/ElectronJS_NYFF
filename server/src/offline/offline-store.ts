@@ -11,6 +11,8 @@ export type StoredSnapshot = Omit<SyncSnapshot, 'counter' | 'unchanged'> & { tak
 export interface StoredHandover {
   cashier: { id: string; name: string; surname: string };
   branchName: string;
+  /** filial manzili (chek uchun); eski yozuvda yo'q */
+  branchAddress?: string;
   /** online kassa ochilgan sayt — "Online rejimga qaytish" */
   returnUrl: string | null;
   menu: SyncMenu | null;

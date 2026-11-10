@@ -91,7 +91,7 @@ describe('offline kassa serveri', () => {
   it('nusxa: kassirlar (PIN xeshisiz), menyu, rasmlar; PIN bilan kirish, 5 marta xato — blok', async () => {
     await sync.refreshSnapshot();
     const data = (await http().get('/api/offline/data').expect(200)).body;
-    expect(data.branch).toEqual({ id: BRANCH, name: 'Chilonzor' });
+    expect(data.branch).toEqual({ id: BRANCH, name: 'Chilonzor', address: 'Bunyodkor 12' });
     expect(data.cashiers).toEqual(expect.arrayContaining([CASHIER]));
     expect(JSON.stringify(data)).not.toContain('pinHash');
     expect(data.menu.products).toHaveLength(4);

@@ -42,10 +42,11 @@ bosadi). Internet qaytgach buyurtmalar markazga o'zi yuboriladi. Markaz tomoni v
    "Saqlash" — PostgreSQL va kalit tekshiriladi (markaz javob bermasa — ogohlantirish, "Baribir saqlash" mumkin).
    O'ng tomonda — **Printerlar**: "Kassa printeri" va "Oshxona printeri" (avval Windows'ga drayverini o'rnating;
    ro'yxatda yo'q bo'lsa — "ro'yxatni yangilang"), har biriga "Sinov". Tanlash darhol saqlanadi.
-4. Online kassada: "Sozlamalar" → **"Internet uzilsa offline rejimga o'tish"** (manzil `http://localhost:3100`) — bu
-   cheklarni ham shu dastur orqali chiqarishni yoqadi. Birinchi chekda Chrome **bir marta** "boshqa ilovalarga ulanish"
-   ruxsatini so'raydi — "Ruxsat berish" (eslab qoladi; ruxsat berilmasa mijoz cheki brauzer orqali chiqadi, oshxona
-   cheki — yo'q).
+4. Online kassani oching (`https://newyork24.uz/shorva/kassa`): Chrome **bir marta** "qurilmadagi ilovalarga ulanish"
+   ruxsatini so'raydi — **"Ruxsat berish"** (eslab qoladi; ruxsat berilmasa mijoz cheki brauzer orqali chiqadi, oshxona
+   cheki — yo'q). Kassa sahifasi cheklarni har doim shu dastur orqali chiqaradi — hech narsa yoqish shart emas.
+5. Offline rejim uchun: online kassada "Sozlamalar" → **"Internet uzilsa offline rejimga o'tish"** (manzil
+   `http://localhost:3100`). Bu faqat internet uzilganda offline kassaga o'tishni yoqadi, chek chop etishga ta'siri yo'q.
 
 Filialda offline faqat **bitta** kassa kompyuterida (aks holda buyurtma raqamlari to'qnashadi). Kassa kompyuteri soati
 to'g'ri bo'lsin. Offline'da smena ochilmaydi / yopilmaydi.

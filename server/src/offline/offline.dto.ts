@@ -27,6 +27,12 @@ export class HandoverDto {
   @MaxLength(100)
   branchName?: string;
 
+  /** filial manzili — chekda chiqadi */
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  branchAddress?: string;
+
   /** online kassa sahifasi (`https://newyork24.uz/shorva/kassa`) — "Online rejimga qaytish" shu yerga */
   @IsOptional()
   @Matches(/^https?:\/\/[^\s]+$/)

@@ -62,7 +62,7 @@ export class FakeCentral {
 
   private snapshotBody() {
     return {
-      branch: { id: BRANCH, name: 'Chilonzor' },
+      branch: { id: BRANCH, name: 'Chilonzor', address: 'Bunyodkor 12' },
       cashiers: this.cashiers,
       menu: menu(this.burgerPrice),
       images: [{ path: IMAGE_PATH, size: 4, modifiedAt: '2026-11-01T00:00:00.000Z' }],

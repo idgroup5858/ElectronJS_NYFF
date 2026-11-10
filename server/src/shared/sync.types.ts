@@ -58,7 +58,8 @@ export interface SyncCounter {
 export interface SyncSnapshot {
   version: string;
   unchanged: false;
-  branch: { id: string; name: string };
+  /** `address` — chekda chiqadi; markaz yangilanmaguncha olingan eski nusxada yo'q */
+  branch: { id: string; name: string; address?: string };
   cashiers: SyncCashier[];
   menu: SyncMenu;
   images: SyncImage[];

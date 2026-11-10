@@ -25,7 +25,8 @@ export interface OfflineCashier {
 
 /** Sahifa bir marta oladi: filial, kassirlar (PIN'siz), menyu, online kassa manzili ("Online rejimga qaytish"). */
 export interface OfflineData {
-  branch: { id: string; name: string };
+  /** `address` — chekda chiqadi */
+  branch: { id: string; name: string; address: string };
   /** PIN bilan kira oladiganlar (markazdan olingan ro'yxat) */
   cashiers: OfflineCashier[];
   menu: SyncMenu | null;
@@ -79,7 +80,11 @@ export class OfflineKassaService {
   async data(): Promise<OfflineData> {
     const [snapshot, handover] = await Promise.all([this.store.get('snapshot'), this.store.get('handover')]);
     return {
-      branch: { id: this.config.branchId, name: snapshot?.branch.name || handover?.branchName || '' },
+      branch: {
+        id: this.config.branchId,
+        name: snapshot?.branch.name || handover?.branchName || '',
+        address: snapshot?.branch.address || handover?.branchAddress || '',
+      },
       cashiers: (snapshot?.cashiers ?? []).map(({ id, name, surname }) => ({ id, name, surname })),
       menu: this.menuOf(snapshot, handover),
       kassaUrl: handover?.returnUrl || `${this.config.centralUrl}${safeUiBase(snapshot?.uiBase)}`,
@@ -117,6 +122,7 @@ export class OfflineKassaService {
     const stored: StoredHandover = {
       cashier,
       branchName: dto.branchName ?? '',
+      branchAddress: dto.branchAddress ?? '',
       returnUrl: dto.returnUrl ?? null,
       menu: isMenu(dto.menu) ? dto.menu : null,
       at: now.toISOString(),
