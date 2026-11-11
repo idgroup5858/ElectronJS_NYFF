@@ -33,6 +33,8 @@ export interface SyncProduct {
   composition: LocalizedText[];
   /** `false` — oshxona chekiga chiqmaydi (tayyor ichimlik). Eski markazda yo'q — chiqadi deb olinadi. */
   kitchen?: boolean;
+  /** `true` — truck chekiga chiqadi (`kitchen` dan mustaqil). Eski markazda yo'q — chiqmaydi deb olinadi. */
+  truck?: boolean;
   /** `true` — faqat zalda beriladi (choynakdagi choy): olib ketishga yo'q. Eski markazda yo'q — cheklanmaydi. */
   dineInOnly?: boolean;
 }

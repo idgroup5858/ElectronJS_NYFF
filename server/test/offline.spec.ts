@@ -196,6 +196,10 @@ describe('offline kassa serveri', () => {
 
     await http().post('/api/offline/leave').set(bearer(token)).expect(204);
     expect((await http().get('/api/offline/state').expect(200)).body.number).toEqual({ confirmed: false, last: 81 });
+    // kirish oynasidan (kassir kirmagan) online'ga qaytish — tokensiz ham
+    await http().post('/api/offline/number').set(bearer(token)).send({ last: 81 }).expect(204);
+    await http().post('/api/offline/leave').expect(204);
+    expect((await http().get('/api/offline/state').expect(200)).body.number).toEqual({ confirmed: false, last: 81 });
     // kichikroq kiritilsa ham ma'lum bo'lgan eng kattasidan davom etadi
     await http().post('/api/offline/number').set(bearer(token)).send({ last: 10 }).expect(204);
     expect((await http().post('/api/offline/orders').set(bearer(token)).send(order()).expect(201)).body.number).toBe(82);

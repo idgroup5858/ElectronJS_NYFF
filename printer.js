@@ -4,13 +4,13 @@ const { BrowserWindow } = require('electron')
 /*
  * Chek chop etish xizmati — Electron'ning asosiy jarayonida (offline serverdan alohida: baza yoki server ishlamasa ham
  * chek chiqadi). Web kassa (online — https://newyork24.uz, offline — localhost:3100/offline) chekni tayyor HTML qilib
- * `POST http://127.0.0.1:3101/print` ga yuboradi; bu yerda u sozlamalardagi printerga (kassa / oshxona) oynasiz chiqadi.
- * Ikkala chek parallel. Faqat shu kompyuterdan (`127.0.0.1`) va ruxsat etilgan sahifalardan (markaz, localhost).
+ * `POST http://127.0.0.1:3101/print` ga yuboradi; bu yerda u sozlamalardagi printerga (kassa / oshxona / truck) oynasiz
+ * chiqadi. Cheklar parallel. Faqat shu kompyuterdan (`127.0.0.1`) va ruxsat etilgan sahifalardan (markaz, localhost).
  */
 
 const PRINT_PORT = 3101
 const MAX_BODY = 1024 * 1024
-const ROLES = ['receipt', 'kitchen']
+const ROLES = ['receipt', 'kitchen', 'truck']
 
 /** HTML'ni Windows printeriga nomi bilan, oynasiz chop etadi. Printer yo'q / o'chiq — xato. */
 async function printHtml(html, deviceName) {
@@ -59,7 +59,7 @@ const isLoopback = (origin) => {
 
 /**
  * Xizmatni ishga tushiradi. `getCentralUrl()` — markaz manzili (uning sahifalari chop eta oladi), `getPrinters()` —
- * `{ receipt, kitchen }` printer nomlari (sozlamalardan, har so'rovda — o'zgarsa qayta ishga tushirish kerak emas).
+ * `{ receipt, kitchen, truck }` printer nomlari (sozlamalardan, har so'rovda — o'zgarsa qayta ishga tushirish kerak emas).
  */
 function startPrintServer({ getCentralUrl, getPrinters, log }) {
   const allowed = (origin) => {
@@ -101,7 +101,7 @@ function startPrintServer({ getCentralUrl, getPrinters, log }) {
     const url = req.url?.split('?')[0]
     if (req.method === 'GET' && url === '/status') {
       const printers = getPrinters()
-      return send(res, 200, { receipt: Boolean(printers.receipt), kitchen: Boolean(printers.kitchen) }, origin)
+      return send(res, 200, Object.fromEntries(ROLES.map((role) => [role, Boolean(printers[role])])), origin)
     }
     if (req.method !== 'POST' || url !== '/print') return send(res, 404, { error: 'not_found' }, origin)
 

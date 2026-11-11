@@ -10,8 +10,11 @@ import { OFFLINE_CONFIG, syncConfigured, type OfflineConfig } from './offline-co
 import { OfflineOrder } from './offline.entities';
 import { OfflineStore, type StoredImages } from './offline-store';
 
-/** Internet qaytganini tekshirish oralig'i — faqat yuboriladigan buyurtma bor yoki offline kassa ochiq paytda. */
-export const SYNC_TICK_MS = 10_000;
+/**
+ * Internet qaytganini tekshirish oralig'i — faqat yuboriladigan buyurtma bor yoki offline kassa ochiq paytda.
+ * 2026-11-11: 10 s → 5 s — offline kassa internet qaytgach online'ga o'zi qaytadi, kassir uzoq kutmasin.
+ */
+export const SYNC_TICK_MS = 5_000;
 /** Ishga tushganda nusxa olinmasa (internet yo'q) — shuncha vaqtdan keyin yana urinadi. */
 const SNAPSHOT_RETRY_MS = 60_000;
 /** Offline kassa sahifasi shuncha vaqt ichida holat so'ragan bo'lsa — "ochiq" (internet qaytganini bilishi kerak). */
@@ -57,7 +60,7 @@ function toSyncOrder(order: OfflineOrder): SyncOrder {
 /**
  * Markaz bilan sinxronlash. Internet bor va hamma narsa yuborilgan paytda markazga **hech qanday so'rov ketmaydi**.
  * Nusxa (kassirlar, menyu, rasmlar) — ishga tushganda (har kuni kompyuter yoqilganda, yangilangach) va internet qaytib
- * buyurtmalar yuborilgandan keyin. Har 10 soniyada — faqat yuboriladigan buyurtma bo'lsa yoki offline kassa ochiq
+ * buyurtmalar yuborilgandan keyin. Har 5 soniyada — faqat yuboriladigan buyurtma bo'lsa yoki offline kassa ochiq
  * bo'lsa: buyurtmalarni yuboradi / markaz javob berayotganini tekshiradi. Markaz qabul qilgan buyurtma darhol o'chiriladi.
  */
 @Injectable()

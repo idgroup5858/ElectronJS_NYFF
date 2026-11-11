@@ -99,8 +99,8 @@ function loadConfig() {
       password: DB_DEFAULTS.password,
       database: DB_DEFAULTS.database,
     },
-    // Windows printer nomlari: mijoz cheki va oshxona cheki; bo'sh — tanlanmagan
-    printers: { receipt: '', kitchen: '' },
+    // Windows printer nomlari: mijoz cheki, oshxona cheki va truck cheki; bo'sh — tanlanmagan
+    printers: { receipt: '', kitchen: '', truck: '' },
   }
   config = { ...defaults, ...loaded, db: { ...defaults.db, ...loaded.db }, printers: { ...defaults.printers, ...loaded.printers } }
   if (JSON.stringify(config) !== JSON.stringify(loaded)) saveConfig()
@@ -587,7 +587,7 @@ ipcMain.handle('setup:open-kassa', () => openOfflineKassa())
 
 // ------------------------------------------------------------------ printerlar (IPC)
 
-const PRINTER_TITLES = { receipt: 'Kassa printeri (mijoz cheki)', kitchen: 'Oshxona printeri' }
+const PRINTER_TITLES = { receipt: 'Kassa printeri (mijoz cheki)', kitchen: 'Oshxona printeri', truck: 'Truck printeri' }
 
 ipcMain.handle('printers:load', async (event) => {
   const list = await event.sender.getPrintersAsync()

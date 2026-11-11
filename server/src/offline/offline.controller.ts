@@ -92,7 +92,10 @@ export class OfflineController {
     await this.kassa.setNumber(dto.last);
   }
 
-  @UseGuards(OfflineAuthGuard)
+  /**
+   * "Online rejimga qaytish" — ochiq (2026-11-11): offline kassa internet qaytgach kirish oynasidan ham (kassir kirmagan)
+   * online'ga o'zi qaytadi. Zararsiz — faqat keyingi offline'da raqamni qayta aniqlatadi; server faqat shu kompyuterda.
+   */
   @Post('leave')
   @HttpCode(204)
   async leave() {
